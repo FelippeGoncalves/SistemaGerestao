@@ -2,12 +2,14 @@
 
 # Script de Instalação - Sistema de Gestão de Projetos
 # Para Ubuntu 20.04+ (servidor zerado)
+# Instala Backend Flask + Frontend React
 
 set -e  # Parar execução em caso de erro
 
 echo "=========================================="
 echo "  SISTEMA DE GESTÃO DE PROJETOS"
 echo "  Script de Instalação Automática"
+echo "  Backend Flask + Frontend React"
 echo "=========================================="
 echo ""
 
@@ -99,7 +101,33 @@ pip install -r requirements.txt
 log_info "Inicializando banco de dados..."
 python populate_db.py
 
-# 11. Criar arquivo de configuração systemd
+# 11. Configurar Frontend (se código fonte disponível)
+if [ -d "../frontend-source" ]; then
+    log_info "Código fonte do frontend encontrado. Fazendo build..."
+    
+    # Copiar código fonte do frontend
+    cp -r ../frontend-source $PROJECT_DIR/
+    cd $PROJECT_DIR/frontend-source
+    
+    # Instalar dependências do frontend
+    log_info "Instalando dependências do frontend..."
+    npm install
+    
+    # Fazer build do frontend
+    log_info "Fazendo build do frontend..."
+    npm run build
+    
+    # Copiar build para pasta static do backend
+    log_info "Copiando build para o backend..."
+    rm -rf ../static/*
+    cp -r dist/* ../static/
+    
+    cd $PROJECT_DIR
+else
+    log_warning "Código fonte do frontend não encontrado. Usando build pré-compilado."
+fi
+
+# 12. Criar arquivo de configuração systemd
 log_info "Criando serviço systemd..."
 sudo tee /etc/systemd/system/sistema-gestao.service > /dev/null <<EOF
 [Unit]
@@ -119,11 +147,11 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-# 12. Instalar e configurar Nginx
+# 13. Instalar e configurar Nginx
 log_info "Instalando e configurando Nginx..."
 sudo apt install -y nginx
 
-# 13. Configurar Nginx como proxy reverso
+# 14. Configurar Nginx como proxy reverso
 sudo tee /etc/nginx/sites-available/sistema-gestao > /dev/null <<EOF
 server {
     listen 80;
@@ -144,21 +172,21 @@ server {
 }
 EOF
 
-# 14. Ativar configuração do Nginx
+# 15. Ativar configuração do Nginx
 sudo ln -sf /etc/nginx/sites-available/sistema-gestao /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 
-# 15. Testar configuração do Nginx
+# 16. Testar configuração do Nginx
 sudo nginx -t
 
-# 16. Configurar firewall
+# 17. Configurar firewall
 log_info "Configurando firewall..."
 sudo ufw allow 22/tcp
 sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
 sudo ufw --force enable
 
-# 17. Habilitar e iniciar serviços
+# 18. Habilitar e iniciar serviços
 log_info "Habilitando e iniciando serviços..."
 sudo systemctl daemon-reload
 sudo systemctl enable sistema-gestao
@@ -166,7 +194,7 @@ sudo systemctl start sistema-gestao
 sudo systemctl enable nginx
 sudo systemctl restart nginx
 
-# 18. Verificar status dos serviços
+# 19. Verificar status dos serviços
 log_info "Verificando status dos serviços..."
 sleep 5
 
@@ -184,7 +212,7 @@ else
     sudo systemctl status nginx
 fi
 
-# 19. Obter IP do servidor
+# 20. Obter IP do servidor
 SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
 
 echo ""
@@ -205,7 +233,10 @@ echo "   Iniciar:   sudo systemctl start sistema-gestao"
 echo "   Reiniciar: sudo systemctl restart sistema-gestao"
 echo "   Logs:      sudo journalctl -u sistema-gestao -f"
 echo ""
-echo "📁 Diretório do projeto: $PROJECT_DIR"
+echo "📁 Diretórios:"
+echo "   Backend:   $PROJECT_DIR"
+echo "   Frontend:  $PROJECT_DIR/frontend-source (código fonte)"
+echo "   Static:    $PROJECT_DIR/static (build do frontend)"
 echo ""
 log_warning "IMPORTANTE: Configure seu DNS/domínio para apontar para $SERVER_IP"
 echo ""

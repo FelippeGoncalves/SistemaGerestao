@@ -2,7 +2,10 @@
 
 ## 📋 Visão Geral
 
-Este pacote contém todos os arquivos necessários para instalar e configurar o Sistema de Gestão de Projetos em um servidor Ubuntu zerado.
+Este repositório contém um sistema completo de gestão de projetos com:
+- **Backend**: Flask + SQLAlchemy + APIs REST
+- **Frontend**: React + Vite + Tailwind CSS + Recharts
+- **Deploy**: Scripts automatizados para Ubuntu
 
 ## 🖥️ Requisitos do Sistema
 
@@ -12,74 +15,62 @@ Este pacote contém todos os arquivos necessários para instalar e configurar o 
 - **Rede**: Conexão com internet para download de dependências
 - **Usuário**: Usuário não-root com privilégios sudo
 
-## 📦 Conteúdo do Pacote
+## 📦 Estrutura do Repositório
 
 ```
-sistema-gestao-deploy-package/
-├── install.sh                    # Script de instalação automática
-├── README.md                     # Este arquivo
-└── sistema-gestao-backend/       # Aplicação backend completa
-    ├── src/                      # Código fonte Python/Flask
-    ├── static/                   # Frontend React buildado
-    ├── requirements.txt          # Dependências Python
-    ├── populate_db.py           # Script de inicialização do banco
-    └── clear_db.py              # Script para limpar banco
+SistemaGerestao/
+├── sistema-gestao-backend/       # Backend Flask completo
+│   ├── src/                     # Código fonte Python
+│   │   ├── main.py             # Aplicação principal
+│   │   ├── models/             # Modelos de dados
+│   │   └── routes/             # Rotas da API
+│   ├── static/                 # Frontend buildado (servido pelo Flask)
+│   ├── requirements.txt        # Dependências Python
+│   ├── populate_db.py         # Script de inicialização do banco
+│   └── clear_db.py            # Script para limpar banco
+├── frontend-source/            # Código fonte React
+│   ├── src/                   # Código fonte React
+│   │   ├── pages/            # Páginas principais (.jsx)
+│   │   ├── components/       # Componentes reutilizáveis (.jsx)
+│   │   └── services/         # Serviços e APIs
+│   ├── package.json          # Dependências Node.js
+│   └── vite.config.js        # Configuração do Vite
+├── install.sh                # Script de instalação automática
+├── backup.sh                 # Script de backup
+├── check-system.sh           # Script de verificação
+├── COMANDOS_RAPIDOS.md       # Comandos essenciais
+└── README.md                 # Este arquivo
 ```
 
 ## 🚀 Instalação Automática (Recomendada)
 
-### Passo 1: Preparar o Servidor
+### Opção 1: Clone e Execute
 
 ```bash
-# 1. Conectar ao servidor via SSH
-ssh usuario@seu-servidor.com
+# 1. Clonar repositório
+git clone https://github.com/FelippeGoncalves/SistemaGerestao.git
+cd SistemaGerestao
 
-# 2. Atualizar sistema (opcional, o script fará isso)
-sudo apt update && sudo apt upgrade -y
-```
-
-### Passo 2: Fazer Upload do Pacote
-
-```bash
-# Opção A: Via SCP (do seu computador local)
-scp -r sistema-gestao-deploy-package/ usuario@seu-servidor.com:~/
-
-# Opção B: Via wget (se disponível online)
-wget https://seu-site.com/sistema-gestao-deploy-package.tar.gz
-tar -xzf sistema-gestao-deploy-package.tar.gz
-
-# Opção C: Via Git (se em repositório)
-git clone https://github.com/seu-usuario/sistema-gestao-deploy-package.git
-```
-
-### Passo 3: Executar Instalação
-
-```bash
-# Navegar para o diretório
-cd sistema-gestao-deploy-package/
-
-# Executar script de instalação
+# 2. Executar instalação automática
 ./install.sh
 ```
 
-### Passo 4: Verificar Instalação
+### Opção 2: Download e Execute
 
 ```bash
-# Verificar status do serviço
-sudo systemctl status sistema-gestao
+# 1. Download do repositório
+wget https://github.com/FelippeGoncalves/SistemaGerestao/archive/main.zip
+unzip main.zip
+cd SistemaGerestao-main
 
-# Verificar logs
-sudo journalctl -u sistema-gestao -f
-
-# Testar acesso local
-curl http://localhost
+# 2. Executar instalação
+chmod +x install.sh
+./install.sh
 ```
 
-## 🔧 Instalação Manual (Avançada)
+## 🔧 Instalação Manual
 
-Se preferir instalar manualmente ou personalizar a instalação:
-
-### 1. Instalar Dependências
+### 1. Preparar Ambiente
 
 ```bash
 # Atualizar sistema
@@ -101,14 +92,14 @@ sudo apt install -y nodejs
 sudo apt install -y nginx
 ```
 
-### 2. Configurar Aplicação
+### 2. Configurar Backend
 
 ```bash
 # Criar diretório do projeto
 sudo mkdir -p /opt/sistema-gestao-projetos
 sudo chown $USER:$USER /opt/sistema-gestao-projetos
 
-# Copiar arquivos
+# Copiar arquivos do backend
 cp -r sistema-gestao-backend/* /opt/sistema-gestao-projetos/
 
 # Navegar para o diretório
@@ -126,15 +117,39 @@ pip install -r requirements.txt
 python populate_db.py
 ```
 
-### 3. Configurar Serviço Systemd
+### 3. Configurar Frontend (Opcional - para desenvolvimento)
+
+```bash
+# Copiar código fonte do frontend
+cp -r frontend-source /opt/sistema-gestao-projetos/
+
+# Navegar para o frontend
+cd /opt/sistema-gestao-projetos/frontend-source
+
+# Instalar dependências
+npm install
+
+# Para desenvolvimento
+npm run dev
+
+# Para produção - fazer build
+npm run build
+
+# Copiar build para o backend
+rm -rf ../static/*
+cp -r dist/* ../static/
+```
+
+### 4. Configurar Serviços
+
+#### Serviço Systemd
 
 ```bash
 # Criar arquivo de serviço
 sudo nano /etc/systemd/system/sistema-gestao.service
 ```
 
-Conteúdo do arquivo:
-
+Conteúdo:
 ```ini
 [Unit]
 Description=Sistema de Gestão de Projetos
@@ -153,15 +168,14 @@ RestartSec=10
 WantedBy=multi-user.target
 ```
 
-### 4. Configurar Nginx
+#### Configuração Nginx
 
 ```bash
 # Criar configuração do site
 sudo nano /etc/nginx/sites-available/sistema-gestao
 ```
 
-Conteúdo do arquivo:
-
+Conteúdo:
 ```nginx
 server {
     listen 80;
@@ -181,7 +195,7 @@ server {
 }
 ```
 
-### 5. Ativar Serviços
+#### Ativar Serviços
 
 ```bash
 # Ativar configuração do Nginx
@@ -199,37 +213,147 @@ sudo systemctl enable nginx
 sudo systemctl restart nginx
 ```
 
-## 🌐 Configuração de Domínio (Opcional)
+## 🏗️ Desenvolvimento
 
-### Para usar um domínio personalizado:
-
-1. **Configure seu DNS** para apontar para o IP do servidor
-2. **Edite a configuração do Nginx**:
+### Backend (Flask)
 
 ```bash
+# Navegar para o backend
+cd /opt/sistema-gestao-projetos
+
+# Ativar ambiente virtual
+source venv/bin/activate
+
+# Executar em modo desenvolvimento
+python src/main.py
+
+# APIs disponíveis:
+# GET    /api/projects
+# POST   /api/projects
+# PUT    /api/projects/<id>
+# DELETE /api/projects/<id>
+# GET    /api/developers
+# POST   /api/developers
+# PUT    /api/developers/<id>
+# DELETE /api/developers/<id>
+# GET    /api/time-entries
+# POST   /api/time-entries
+# PUT    /api/time-entries/<id>
+# DELETE /api/time-entries/<id>
+```
+
+### Frontend (React)
+
+```bash
+# Navegar para o frontend
+cd /opt/sistema-gestao-projetos/frontend-source
+
+# Instalar dependências (se necessário)
+npm install
+
+# Executar em modo desenvolvimento
+npm run dev
+
+# Build para produção
+npm run build
+
+# Copiar build para o backend
+rm -rf ../static/*
+cp -r dist/* ../static/
+
+# Reiniciar backend para servir novo build
+sudo systemctl restart sistema-gestao
+```
+
+## 🌐 Configuração de Domínio
+
+### DNS e SSL
+
+```bash
+# 1. Configurar DNS para apontar para o IP do servidor
+
+# 2. Editar configuração do Nginx
 sudo nano /etc/nginx/sites-available/sistema-gestao
-```
 
-Altere a linha `server_name _;` para:
-```nginx
-server_name seu-dominio.com www.seu-dominio.com;
-```
+# Alterar server_name para seu domínio:
+# server_name seu-dominio.com www.seu-dominio.com;
 
-3. **Instale SSL com Let's Encrypt** (recomendado):
-
-```bash
-# Instalar Certbot
+# 3. Instalar SSL com Let's Encrypt
 sudo apt install -y certbot python3-certbot-nginx
 
-# Obter certificado SSL
+# 4. Obter certificado SSL
 sudo certbot --nginx -d seu-dominio.com -d www.seu-dominio.com
 
-# Renovação automática
+# 5. Configurar renovação automática
 sudo crontab -e
-# Adicionar linha: 0 12 * * * /usr/bin/certbot renew --quiet
+# Adicionar: 0 12 * * * /usr/bin/certbot renew --quiet
 ```
 
-## 🔒 Configuração de Firewall
+## 📊 Comandos de Gerenciamento
+
+### Controle do Sistema
+
+```bash
+# Status dos serviços
+sudo systemctl status sistema-gestao
+sudo systemctl status nginx
+
+# Controlar backend
+sudo systemctl start sistema-gestao
+sudo systemctl stop sistema-gestao
+sudo systemctl restart sistema-gestao
+
+# Logs em tempo real
+sudo journalctl -u sistema-gestao -f
+
+# Verificação completa do sistema
+./check-system.sh
+```
+
+### Backup e Restauração
+
+```bash
+# Backup automático
+./backup.sh
+
+# Backup manual do banco
+cp /opt/sistema-gestao-projetos/database.db /opt/sistema-gestao-projetos/backup_$(date +%Y%m%d_%H%M%S).db
+
+# Restaurar backup
+sudo systemctl stop sistema-gestao
+cp backup_YYYYMMDD_HHMMSS.db /opt/sistema-gestao-projetos/database.db
+sudo systemctl start sistema-gestao
+```
+
+### Atualização do Sistema
+
+```bash
+# 1. Fazer backup
+./backup.sh
+
+# 2. Atualizar código
+git pull origin main
+
+# 3. Atualizar backend
+cd /opt/sistema-gestao-projetos
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 4. Atualizar frontend (se necessário)
+cd frontend-source
+npm install
+npm run build
+rm -rf ../static/*
+cp -r dist/* ../static/
+
+# 5. Reiniciar serviços
+sudo systemctl restart sistema-gestao
+sudo systemctl restart nginx
+```
+
+## 🔒 Segurança
+
+### Firewall
 
 ```bash
 # Configurar UFW
@@ -239,60 +363,31 @@ sudo ufw allow 443/tcp   # HTTPS
 sudo ufw enable
 ```
 
-## 📊 Comandos de Gerenciamento
-
-### Controle do Serviço
+### Monitoramento
 
 ```bash
-# Ver status
-sudo systemctl status sistema-gestao
-
-# Iniciar
-sudo systemctl start sistema-gestao
-
-# Parar
-sudo systemctl stop sistema-gestao
-
-# Reiniciar
-sudo systemctl restart sistema-gestao
-
-# Ver logs em tempo real
+# Logs do sistema
 sudo journalctl -u sistema-gestao -f
 
-# Ver logs das últimas 100 linhas
-sudo journalctl -u sistema-gestao -n 100
-```
+# Logs do Nginx
+sudo tail -f /var/log/nginx/access.log
+sudo tail -f /var/log/nginx/error.log
 
-### Backup do Banco de Dados
-
-```bash
-# Fazer backup
-cp /opt/sistema-gestao-projetos/database.db /opt/sistema-gestao-projetos/backup_$(date +%Y%m%d_%H%M%S).db
-
-# Restaurar backup
-cp /opt/sistema-gestao-projetos/backup_YYYYMMDD_HHMMSS.db /opt/sistema-gestao-projetos/database.db
-sudo systemctl restart sistema-gestao
-```
-
-### Limpar Banco de Dados
-
-```bash
-cd /opt/sistema-gestao-projetos
-source venv/bin/activate
-python clear_db.py
-python populate_db.py
-sudo systemctl restart sistema-gestao
+# Recursos do sistema
+htop
+df -h
+free -h
 ```
 
 ## 🔧 Solução de Problemas
 
-### Serviço não inicia
+### Backend não inicia
 
 ```bash
-# Verificar logs detalhados
+# Verificar logs
 sudo journalctl -u sistema-gestao -n 50
 
-# Verificar se a porta está em uso
+# Verificar porta
 sudo netstat -tlnp | grep :8000
 
 # Testar manualmente
@@ -301,17 +396,18 @@ source venv/bin/activate
 python src/main.py
 ```
 
-### Nginx não funciona
+### Frontend não carrega
 
 ```bash
-# Testar configuração
-sudo nginx -t
+# Verificar se build existe
+ls -la /opt/sistema-gestao-projetos/static/
 
-# Verificar logs do Nginx
-sudo tail -f /var/log/nginx/error.log
-
-# Reiniciar Nginx
-sudo systemctl restart nginx
+# Refazer build
+cd /opt/sistema-gestao-projetos/frontend-source
+npm run build
+rm -rf ../static/*
+cp -r dist/* ../static/
+sudo systemctl restart sistema-gestao
 ```
 
 ### Problemas de permissão
@@ -324,26 +420,42 @@ chmod +x /opt/sistema-gestao-projetos/venv/bin/python
 
 ## 📞 Suporte
 
-Para suporte técnico ou dúvidas:
+### Arquivos de Log
 
-1. Verifique os logs do sistema
-2. Consulte a seção de solução de problemas
-3. Entre em contato com a equipe de desenvolvimento
+- **Sistema**: `sudo journalctl -u sistema-gestao`
+- **Nginx**: `/var/log/nginx/error.log`
+- **Aplicação**: Logs aparecem no journalctl
 
-## 📝 Notas Importantes
+### Comandos de Diagnóstico
 
-- **Backup**: Sempre faça backup do banco de dados antes de atualizações
-- **Segurança**: Configure SSL/HTTPS para produção
-- **Monitoramento**: Configure monitoramento de logs e recursos
-- **Atualizações**: Mantenha o sistema operacional atualizado
+```bash
+# Verificação completa
+./check-system.sh
 
-## 🎯 Acesso ao Sistema
+# Status dos serviços
+sudo systemctl status sistema-gestao nginx
 
-Após a instalação bem-sucedida:
+# Conectividade
+curl http://localhost
+curl http://localhost/api/projects
+```
+
+## 🎯 URLs de Acesso
+
+Após instalação bem-sucedida:
 
 - **Local**: http://localhost
 - **Rede**: http://IP-DO-SERVIDOR
+- **API**: http://localhost/api/
 - **Domínio**: http://seu-dominio.com (se configurado)
+
+## 📝 Notas Importantes
+
+- **Backup**: Sempre faça backup antes de atualizações
+- **SSL**: Configure HTTPS para produção
+- **Firewall**: Mantenha apenas portas necessárias abertas
+- **Monitoramento**: Configure alertas para recursos do sistema
+- **Atualizações**: Mantenha sistema operacional atualizado
 
 O sistema estará disponível 24/7 e reiniciará automaticamente em caso de falha ou reinicialização do servidor.
 
